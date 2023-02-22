@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:developer';
+import 'dart:io';
 
 import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
 import 'package:flutter/material.dart';
@@ -6,8 +8,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:video_editor/core/utils/constant.dart';
+import 'package:uuid/uuid.dart';
+import 'package:gallery_saver/gallery_saver.dart';
 import 'package:video_editor/landing/cubit/file_picker/file_picker_cubit.dart';
+import 'package:path_provider/path_provider.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
@@ -57,8 +61,9 @@ class _LandingPageState extends State<LandingPage> {
       ///
       /// Replacing audio stream
       /// -c:v copy -c:a aac -map 0:v:0 -map 1:a:0
+      final outputPath = await getOutputVideoPath();
       String commandToExecute =
-          '-r 15 -f mp4 -i ${state.videoFilePath} -f mp3 -i ${state.audioFilePath} -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 -t $timeLimit -y ${Constants.outputPath}';
+          '-r 15 -f mp4 -i ${state.videoFilePath} -f mp3 -i ${state.audioFilePath} -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 $outputPath';
 
       //String commandToExecute = '-i ${Constants.VIDEO_PATH} -i ${Constants.VIDEO_PATH2} -filter complex amerge ${Constants.OUTPUT_PATH}';
 
@@ -91,9 +96,9 @@ class _LandingPageState extends State<LandingPage> {
       //     .IMAGES_PATH} -f mp3 -i ${Constants.AUDIO_PATH} -y ${Constants
       //     .OUTPUT_PATH}';
 
-      String command = '-i ${state.videoFilePath} -i ${state.audioFilePath} -c copy ${Constants.outputPath}';
+      String command = '-i ${state.videoFilePath} -i ${state.audioFilePath} -c copy $outputPath';
 
-      await FFmpegKit.execute(commandToExecute).then((rc) {
+      await FFmpegKit.execute(command).then((rc) {
         loading = false;
         setState(() {});
         print('FFmpeg process exited with rc: $rc');
@@ -106,6 +111,21 @@ class _LandingPageState extends State<LandingPage> {
       loading = false;
       setState(() {});
       openAppSettings();
+    }
+  }
+
+  Future<String?> getOutputVideoPath() async {
+    try {
+
+      final tempDir = await getTemporaryDirectory();
+      File file = await File('${tempDir.path}/${const Uuid().v4()}.mp4').create();
+      log("There has: ${file.path}");
+      GallerySaver.saveVideo(file.path);
+      return file.path;
+
+    } catch (e) {
+      log("There has an error!");
+      return null;
     }
   }
 
