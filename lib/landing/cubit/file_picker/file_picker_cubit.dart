@@ -20,7 +20,7 @@ class FilePickerCubit extends Cubit<FilePickerState> {
       ],
     );
     if (result != null) {
-      File file = File(result.files.first.name.toString());
+      File file = File(result.files.first.path.toString());
       emit(
         state.copyWith(
           audioFilePath: file.path,
@@ -45,7 +45,7 @@ class FilePickerCubit extends Cubit<FilePickerState> {
       ],
     );
     if (result != null) {
-      File file = File(result.files.first.name.toString());
+      File file = File(result.files.first.path.toString());
       emit(state.copyWith(videoFilePath: file.path, videoFileName: result.files.first.name));
     }
   }

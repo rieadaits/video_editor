@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:video_editor/core/helpers/file_picker_helper.dart';
 import 'package:video_editor/core/utils/constant.dart';
 import 'package:video_editor/landing/cubit/file_picker/file_picker_cubit.dart';
 
@@ -35,7 +34,7 @@ class _LandingPageState extends State<LandingPage> {
     super.dispose();
   }
 
-  Future<void> mergeIntoVideo() async {
+  Future<void> mergeIntoVideo(FilePickerState state) async {
     final FFmpegKit _flutterFFmpeg = FFmpegKit();
     loading = true;
     String timeLimit = '00:00:';
@@ -58,12 +57,13 @@ class _LandingPageState extends State<LandingPage> {
       ///
       /// Replacing audio stream
       /// -c:v copy -c:a aac -map 0:v:0 -map 1:a:0
-      // String commandToExecute =
-      //     '-r 15 -f mp4 -i ${Constants.VIDEO_PATH} -f mp3 -i ${Constants.AUDIO_PATH} -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 -t $timeLimit -y ${Constants.OUTPUT_PATH}';
+      String commandToExecute =
+          '-r 15 -f mp4 -i ${state.videoFilePath} -f mp3 -i ${state.audioFilePath} -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 -t $timeLimit -y ${Constants.outputPath}';
 
       //String commandToExecute = '-i ${Constants.VIDEO_PATH} -i ${Constants.VIDEO_PATH2} -filter complex amerge ${Constants.OUTPUT_PATH}';
-      String commandToExecute =
-          '-i ${Constants.videoPath} -i ${Constants.videoPath2} -filter_complex "[0:v] [0:a] [1:v] [1:a] concat=n=2:v=1:a=1 [v] [a]" -map "[v]" -map "[a]" ${Constants.outputPath}';
+
+      // String commandToExecute =
+      //     '-i ${Constants.videoPath} -i ${Constants.videoPath2} -filter_complex "[0:v] [0:a] [1:v] [1:a] concat=n=2:v=1:a=1 [v] [a]" -map "[v]" -map "[a]" ${Constants.outputPath}';
 
       // var arguments = ["-i", "${Constants.VIDEO_PATH}", "-c:v", "mpeg4", "-vf", "drawtext=text='My text starting at 640x360':x=640:y=360:fontsize=24:fontcolor=white", "-c:a", "copy", "${Constants.OUTPUT_PATH}"];
       var arguments = [
@@ -90,6 +90,8 @@ class _LandingPageState extends State<LandingPage> {
       // String commandToExecute = '-r 30 -pattern_type sequence -start_number 01 -f image2 -i ${Constants
       //     .IMAGES_PATH} -f mp3 -i ${Constants.AUDIO_PATH} -y ${Constants
       //     .OUTPUT_PATH}';
+
+      String command = '-i ${state.videoFilePath} -i ${state.audioFilePath} -c copy ${Constants.outputPath}';
 
       await FFmpegKit.execute(commandToExecute).then((rc) {
         loading = false;
@@ -128,6 +130,10 @@ class _LandingPageState extends State<LandingPage> {
               ElevatedButton(
                 child: const Text("Pick a Audio"),
                 onPressed: () async => _onPickAudio(),
+              ),
+              ElevatedButton(
+                child: const Text("Merge Audio and Video",),
+                onPressed: () async => mergeIntoVideo(state),
               ),
             ]),
       ),
