@@ -47,5 +47,13 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSAppleMusicUsageDescription</key>
+    <string>Let the user for choosing music file from file directory</string>
+    <key>UISupportsDocumentBrowser</key>
+    <true/>
+    <key>LSSupportsOpeningDocumentsInPlace</key>
+    <true/>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Let the user for choosing video from photo directory for editing video</string>
 </dict>
 </plist>

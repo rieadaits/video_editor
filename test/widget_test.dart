@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:video_editor/app.dart';
 
 import 'package:video_editor/main.dart';
 
