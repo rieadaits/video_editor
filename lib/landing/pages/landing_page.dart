@@ -3,13 +3,16 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter/ffmpeg_session.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
 import 'package:gallery_saver/gallery_saver.dart';
+import 'package:video_editor/core/utils/constant.dart';
 import 'package:video_editor/landing/cubit/file_picker/file_picker_cubit.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -61,9 +64,9 @@ class _LandingPageState extends State<LandingPage> {
       ///
       /// Replacing audio stream
       /// -c:v copy -c:a aac -map 0:v:0 -map 1:a:0
-      final outputPath = await getOutputVideoPath();
+       final outputPath = await getOutputVideoPath(File(state.videoFilePath));
       String commandToExecute =
-          '-r 15 -f mp4 -i ${state.videoFilePath} -f mp3 -i ${state.audioFilePath} -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 $outputPath';
+          '-r 15 -f mp4 -i ${state.videoFilePath} -f mp3 -i ${state.audioFilePath} -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 -t $timeLimit -y $outputPath';
 
       //String commandToExecute = '-i ${Constants.VIDEO_PATH} -i ${Constants.VIDEO_PATH2} -filter complex amerge ${Constants.OUTPUT_PATH}';
 
@@ -96,17 +99,20 @@ class _LandingPageState extends State<LandingPage> {
       //     .IMAGES_PATH} -f mp3 -i ${Constants.AUDIO_PATH} -y ${Constants
       //     .OUTPUT_PATH}';
 
-      String command = '-i ${state.videoFilePath} -i ${state.audioFilePath} -c copy $outputPath';
+       String command = '-i ${state.videoFilePath} -i ${state.audioFilePath} -c copy $outputPath';
 
-      await FFmpegKit.execute(command).then((rc) {
+      await FFmpegKit.execute(command).then((rc){
         loading = false;
         setState(() {});
-        print('FFmpeg process exited with rc: $rc');
+        print('FFmpeg process exited with rc: ${rc.getOutput()}');
         // controller = VideoPlayerController.asset(Constants.OUTPUT_PATH)
         //   ..initialize().then((_) {
         //     notifyListeners();
         //   });
       });
+
+      await GallerySaver.saveVideo(outputPath!, albumName: "saver");
+
     } else if (await Permission.storage.isPermanentlyDenied) {
       loading = false;
       setState(() {});
@@ -114,19 +120,47 @@ class _LandingPageState extends State<LandingPage> {
     }
   }
 
-  Future<String?> getOutputVideoPath() async {
+  void mergeVideoAndAudio(String videoPath, String audioPath,) async {
+    final outputPath = await getOutputVideoPath(File(videoPath));
+    final arguments = ['-i', videoPath,'-stream_loop','-1', '-i', audioPath, '-c:v', 'copy', '-c:a', 'aac', '-map', '0:v:0', '-map', '1:a:0', outputPath!];
+    final rc = (await FFmpegKit.executeWithArguments(arguments));
+    print('FFmpeg process exited with rc ${rc.getOutput()}');
+    await GallerySaver.saveVideo(outputPath, albumName: "saver");
+  }
+
+  Future<String?> getOutputVideoPath(File videoFile) async {
     try {
 
-      final tempDir = await getTemporaryDirectory();
-      File file = await File('${tempDir.path}/${const Uuid().v4()}.mp4').create();
-      log("There has: ${file.path}");
-      GallerySaver.saveVideo(file.path);
-      return file.path;
+      final directory = await getApplicationDocumentsDirectory();
+      final path = directory.path;
+
+      // Copy the video file to the application directory
+      final newPath = '$path/${DateTime.now().millisecondsSinceEpoch}.mp4';
+
+     // await GallerySaver.saveVideo(newFile.path);
+      log("path: $newPath");
+
+      return newPath;
 
     } catch (e) {
       log("There has an error!");
       return null;
     }
+  }
+
+  Future<bool> _requestPermission(Permission permission) async {
+    const permission = Permission.storage;
+    final status = await permission.status;
+    debugPrint('>>>Status $status');
+    if (await permission.status.isGranted) {
+      return true;
+    } else {
+      var result = await permission.request();
+      if (result == PermissionStatus.granted) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @override
@@ -153,7 +187,7 @@ class _LandingPageState extends State<LandingPage> {
               ),
               ElevatedButton(
                 child: const Text("Merge Audio and Video",),
-                onPressed: () async => mergeIntoVideo(state),
+                onPressed: () async => mergeVideoAndAudio(state.videoFilePath, state.audioFilePath,),
               ),
             ]),
       ),

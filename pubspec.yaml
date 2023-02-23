@@ -41,11 +41,12 @@ dependencies:
   gallery_saver: ^2.1.2
   video_player: ^2.1.12
   permission_handler: ^8.1.4+2
-  ffmpeg_kit_flutter: ^5.1.0
+  ffmpeg_kit_flutter: 5.1.0-LTS
   file_picker: ^5.2.5
   uuid: ^3.0.6
   equatable: ^2.0.5
   flutter_bloc: ^8.1.1
+  image_gallery_saver: ^1.7.1
 
 dev_dependencies:
   flutter_test:

@@ -12,7 +12,7 @@ class Constants {
   static const String videoPath2 = '${basePath}Video2.mp4';
   static const String gitPath = '${basePath}giphy.gif';
   static const String audioPath = '${basePath}audio.mp3';
-  static String outputPath = "$basePath${const Uuid().v4()}.mp4";
+  static String outputPath = "$basePath${DateTime.now().millisecondsSinceEpoch}.mp4";
 
   //color constants
 
